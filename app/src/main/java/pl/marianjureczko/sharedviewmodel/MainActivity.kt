@@ -11,6 +11,7 @@ import androidx.compose.material.TextField
 import androidx.compose.material.lightColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 
@@ -19,19 +20,19 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-                MaterialTheme(
-                    colors = lightColors(),
-                    content = {
-                        var name = mutableStateOf("")
-                        Column {
-                            val name1 = name.value
-                            Greeting(name1)
-                            NameInput(name = name.value, onValueChange = {
-                                name.value = it
-                            })
-                        }
+            MaterialTheme(
+                colors = lightColors(),
+                content = {
+                    var name = remember { mutableStateOf("") }
+                    Column {
+                        val name1 = name.value
+                        Greeting(name1)
+                        NameInput(name = name.value, onValueChange = {
+                            name.value = it
+                        })
                     }
-                )
+                }
+            )
         }
     }
 }
@@ -58,5 +59,5 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
-        Greeting("Android")
+    Greeting("Android")
 }
