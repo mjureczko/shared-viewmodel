@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.RowScope
@@ -19,20 +18,21 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material.lightColors
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val viewModel: NameViewModel by viewModels()
         setContent {
             MaterialTheme(
                 colors = lightColors(),
@@ -45,56 +45,70 @@ class MainActivity : ComponentActivity() {
 private const val BLUE_SCREEN = "blue"
 private const val RED_SCREEN = "red"
 private const val GREEN_SCREEN = "green"
+private const val NAME_ARGUMENT = "name"
 
 @Composable
 private fun ComposeRoot() {
     val navController = rememberNavController()
 
-    NavHost(navController, startDestination = BLUE_SCREEN) {
-        val goToBlue = { navController.navigate(BLUE_SCREEN) }
-        val goToRed = { navController.navigate(RED_SCREEN) }
-        val goToGreen = { navController.navigate(GREEN_SCREEN) }
-        composable(route = BLUE_SCREEN) {
-            BlueScreen(navController, goToRed, goToGreen)
+    NavHost(navController, startDestination = "$BLUE_SCREEN/{$NAME_ARGUMENT}") {
+        val goToBlue: (String) -> Unit = { navController.navigate("$BLUE_SCREEN/$it") }
+        val goToRed: (String) -> Unit = { navController.navigate("$RED_SCREEN/$it") }
+        val goToGreen: (String) -> Unit = { navController.navigate("$GREEN_SCREEN/$it") }
+        composable(
+            route = "$BLUE_SCREEN/{$NAME_ARGUMENT}",
+            arguments = listOf(navArgument(NAME_ARGUMENT) { type = NavType.StringType })
+        ) {backStackEntry ->
+            val argumentValue = backStackEntry.arguments?.getString(NAME_ARGUMENT) ?: ""
+            BlueScreen(argumentValue, goToRed, goToGreen)
         }
-        composable(route = RED_SCREEN) {
-            RedScreen(navController, goToBlue, goToGreen)
+        composable(
+            route = "$RED_SCREEN/{$NAME_ARGUMENT}",
+            arguments = listOf(navArgument(NAME_ARGUMENT) { type = NavType.StringType })
+        ) {backStackEntry ->
+            val argumentValue = backStackEntry.arguments?.getString(NAME_ARGUMENT) ?: ""
+            RedScreen(argumentValue, goToBlue, goToGreen)
         }
-        composable(route = GREEN_SCREEN) {
-            GreenScreen(navController, goToBlue, goToRed)
+        composable(
+            route = "$GREEN_SCREEN/{$NAME_ARGUMENT}",
+            arguments = listOf(navArgument(NAME_ARGUMENT) { type = NavType.StringType })
+        ) {backStackEntry ->
+            val argumentValue = backStackEntry.arguments?.getString(NAME_ARGUMENT) ?: ""
+            GreenScreen(argumentValue, goToBlue, goToRed)
         }
     }
 }
 
 @Composable
-fun BlueScreen(navController: NavHostController, goToRed: () -> Unit, goToGreen: () -> Unit) {
-    GenericScreen(Color.Blue, {}, goToRed, goToGreen)
+fun BlueScreen(currentName:String, goToRed: (String) -> Unit, goToGreen: (String) -> Unit) {
+    GenericScreen(Color.Blue, currentName, {}, goToRed, goToGreen)
 }
 
 @Composable
-fun RedScreen(navController: NavHostController, goToBlue: () -> Unit, goToGreen: () -> Unit) {
-    GenericScreen(Color.Red, goToBlue, {}, goToGreen)
+fun RedScreen(currentName:String, goToBlue: (String) -> Unit, goToGreen: (String) -> Unit) {
+    GenericScreen(Color.Red, currentName, goToBlue, {}, goToGreen)
 }
 
 @Composable
-fun GreenScreen(navController: NavHostController, goToBlue: () -> Unit, goToRed: () -> Unit) {
-    GenericScreen(Color.Green, goToBlue, goToRed, {})
+fun GreenScreen(currentName:String, goToBlue: (String) -> Unit, goToRed: (String) -> Unit) {
+    GenericScreen(Color.Green, currentName, goToBlue, goToRed, {})
 }
 
 /*BottomAppBar*/
 @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @Composable
-fun GenericScreen(color: Color, goToBlue: () -> Unit, goToRed: () -> Unit, goToGreen: () -> Unit) {
+fun GenericScreen(color: Color, currentName:String, goToBlue: (String) -> Unit, goToRed: (String) -> Unit, goToGreen: (String) -> Unit) {
+    val viewModel: NameViewModel = viewModel()
+    viewModel.name.value = currentName
     Scaffold(
         bottomBar = {
             BottomNavigation(backgroundColor = Color.LightGray) {
-                ScreenNavigationItem("Blue", goToBlue)
-                ScreenNavigationItem("Red", goToRed)
-                ScreenNavigationItem("Green", goToGreen)
+                ScreenNavigationItem("Blue", viewModel.name, goToBlue)
+                ScreenNavigationItem("Red", viewModel.name, goToRed)
+                ScreenNavigationItem("Green", viewModel.name, goToGreen)
             }
         },
         content = {
-            val viewModel: NameViewModel = viewModel()
             Column {
                 Greeting(viewModel.name.value, color = color)
                 NameInput(name = viewModel.name.value, onValueChange = {
@@ -107,7 +121,7 @@ fun GenericScreen(color: Color, goToBlue: () -> Unit, goToRed: () -> Unit, goToG
 }
 
 @Composable
-fun RowScope.ScreenNavigationItem(text: String, goToRed: () -> Unit) {
+fun RowScope.ScreenNavigationItem(text: String, currentName: State<String>, goToRed: (String) -> Unit) {
     BottomNavigationItem(
         icon = {
             Icon(
@@ -117,7 +131,7 @@ fun RowScope.ScreenNavigationItem(text: String, goToRed: () -> Unit) {
         },
         label = { Text(text) },
         selected = false,
-        onClick = goToRed
+        onClick = {goToRed(currentName.value)}
     )
 }
 
