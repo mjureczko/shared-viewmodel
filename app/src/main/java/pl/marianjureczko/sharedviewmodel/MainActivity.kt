@@ -32,11 +32,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val viewModel: NameViewModel by viewModels()
         setContent {
             MaterialTheme(
                 colors = lightColors(),
-                content = { ComposeRoot(viewModel) }
+                content = { ComposeRoot() }
             )
         }
     }
@@ -47,7 +46,7 @@ private const val RED_SCREEN = "red"
 private const val GREEN_SCREEN = "green"
 
 @Composable
-private fun ComposeRoot(viewModel: NameViewModel) {
+private fun ComposeRoot() {
     val navController = rememberNavController()
 
     NavHost(navController, startDestination = BLUE_SCREEN) {
@@ -55,29 +54,32 @@ private fun ComposeRoot(viewModel: NameViewModel) {
         val goToRed = { navController.navigate(RED_SCREEN) }
         val goToGreen = { navController.navigate(GREEN_SCREEN) }
         composable(route = BLUE_SCREEN) {
-            BlueScreen(navController, viewModel, goToRed, goToGreen)
+            BlueScreen(navController, goToRed, goToGreen)
         }
         composable(route = RED_SCREEN) {
-            RedScreen(navController, viewModel, goToBlue, goToGreen)
+            RedScreen(navController, goToBlue, goToGreen)
         }
         composable(route = GREEN_SCREEN) {
-            GreenScreen(navController, viewModel, goToBlue, goToRed)
+            GreenScreen(navController, goToBlue, goToRed)
         }
     }
 }
 
 @Composable
-fun BlueScreen(navController: NavHostController, viewModel: NameViewModel, goToRed: () -> Unit, goToGreen: () -> Unit) {
+fun BlueScreen(navController: NavHostController, goToRed: () -> Unit, goToGreen: () -> Unit) {
+    val viewModel: NameViewModel = viewModel()
     GenericScreen(Color.Blue, viewModel, {}, goToRed, goToGreen)
 }
 
 @Composable
-fun RedScreen(navController: NavHostController, viewModel: NameViewModel, goToBlue: () -> Unit, goToGreen: () -> Unit) {
+fun RedScreen(navController: NavHostController, goToBlue: () -> Unit, goToGreen: () -> Unit) {
+    val viewModel: NameViewModel = viewModel()
     GenericScreen(Color.Red, viewModel, goToBlue, {}, goToGreen)
 }
 
 @Composable
-fun GreenScreen(navController: NavHostController, viewModel: NameViewModel, goToBlue: () -> Unit, goToRed: () -> Unit) {
+fun GreenScreen(navController: NavHostController, goToBlue: () -> Unit, goToRed: () -> Unit) {
+    val viewModel: NameViewModel = viewModel()
     GenericScreen(Color.Green, viewModel, goToBlue, goToRed, {})
 }
 

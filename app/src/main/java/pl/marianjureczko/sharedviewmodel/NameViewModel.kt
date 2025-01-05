@@ -7,4 +7,7 @@ import androidx.lifecycle.ViewModel
 class NameViewModel : ViewModel() {
     val name: MutableState<String> = mutableStateOf("")
 
+    override fun onCleared() {
+        super.onCleared()
+    }
 }
