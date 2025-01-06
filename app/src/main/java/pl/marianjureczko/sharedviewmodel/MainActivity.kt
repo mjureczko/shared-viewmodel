@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.RowScope
@@ -19,10 +18,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material.lightColors
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -56,11 +58,11 @@ private fun ComposeRoot() {
         composable(route = BLUE_SCREEN) {
             BlueScreen(navController, goToRed, goToGreen)
         }
-        composable(route = RED_SCREEN) {
-            RedScreen(navController, goToBlue, goToGreen)
+        composable(route = RED_SCREEN) {navBackStackEntry: NavBackStackEntry ->
+            RedScreen(navBackStackEntry, navController, goToBlue, goToGreen)
         }
-        composable(route = GREEN_SCREEN) {
-            GreenScreen(navController, goToBlue, goToRed)
+        composable(route = GREEN_SCREEN) {navBackStackEntry: NavBackStackEntry ->
+            GreenScreen(navBackStackEntry, navController, goToBlue, goToRed)
         }
     }
 }
@@ -72,14 +74,16 @@ fun BlueScreen(navController: NavHostController, goToRed: () -> Unit, goToGreen:
 }
 
 @Composable
-fun RedScreen(navController: NavHostController, goToBlue: () -> Unit, goToGreen: () -> Unit) {
-    val viewModel: NameViewModel = viewModel()
+fun RedScreen(navBackStackEntry: NavBackStackEntry, navController: NavHostController, goToBlue: () -> Unit, goToGreen: () -> Unit) {
+    val viewModelStoreOwner = sharedViewModelStoreOwner(navBackStackEntry, navController)
+    val viewModel: NameViewModel = viewModel(viewModelStoreOwner)
     GenericScreen(Color.Red, viewModel, goToBlue, {}, goToGreen)
 }
 
 @Composable
-fun GreenScreen(navController: NavHostController, goToBlue: () -> Unit, goToRed: () -> Unit) {
-    val viewModel: NameViewModel = viewModel()
+fun GreenScreen(navBackStackEntry: NavBackStackEntry, navController: NavHostController, goToBlue: () -> Unit, goToRed: () -> Unit) {
+    val viewModelStoreOwner = sharedViewModelStoreOwner(navBackStackEntry, navController)
+    val viewModel: NameViewModel = viewModel(viewModelStoreOwner)
     GenericScreen(Color.Green, viewModel, goToBlue, goToRed, {})
 }
 
@@ -139,4 +143,10 @@ fun Greeting(name: String, modifier: Modifier = Modifier, color: Color) {
         text = "Hello $name!",
         modifier = modifier.background(color)
     )
+}
+
+
+@Composable
+fun sharedViewModelStoreOwner(navBackStackEntry: NavBackStackEntry, navController: NavController): NavBackStackEntry {
+    return remember(navBackStackEntry) { navController.getBackStackEntry(BLUE_SCREEN) }
 }
